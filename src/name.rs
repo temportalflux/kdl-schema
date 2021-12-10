@@ -1,4 +1,3 @@
-
 /// The name of a node, which can be mandated to a specific value,
 /// or can be used as an alias for some longer string that the `.kdl` author specifies.
 #[derive(Debug, Clone)]

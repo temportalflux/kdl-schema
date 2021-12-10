@@ -44,18 +44,8 @@ impl<TStruct> Validatable<kdl::KdlNode, TStruct> for Node<TStruct> {
 
 	fn validate(
 		&self,
-		value: &kdl::KdlNode,
-		_node: &kdl::KdlNode,
-		data: &mut State<TStruct>,
-	) -> Result<(), Error> {
-		self.validate_node(value, data)
-	}
-}
-
-impl<TStruct> Node<TStruct> {
-	fn validate_node(
-		&self,
 		node: &kdl::KdlNode,
+		_parent: Option<&kdl::KdlNode>,
 		data: &mut State<TStruct>,
 	) -> Result<(), Error> {
 		// Save the names of nodes into the collective memory (so they can be used in validation once all nodes have been visited).
@@ -63,15 +53,21 @@ impl<TStruct> Node<TStruct> {
 			data.insert_collection_name(&collection_id, node.name.clone());
 		}
 
-		self.values.validate(&node, &node.values, data)?;
+		if !self.name.supports(&node.name) {
+			return Err(Error::NameInvalid(node.name.clone(), self.name.clone()));
+		}
+
+		self.values.validate(Some(&node), &node.values, data)?;
 		self.validate_properties(&node, data)?;
-		self.children.validate(&node, &node.children, data)?;
+		self.children.validate(Some(&node), &node.children, data)?;
 		if let Some(callback) = &self.on_validation_successful {
 			callback(&mut data.output, &node);
 		}
 		Ok(())
 	}
+}
 
+impl<TStruct> Node<TStruct> {
 	fn validate_properties(
 		&self,
 		node: &kdl::KdlNode,
@@ -99,7 +95,7 @@ impl<TStruct> Node<TStruct> {
 					));
 				}
 				Some(property) => {
-					property.value.validate(value, node, data)?;
+					property.value.validate(value, Some(&node), data)?;
 					found_names.remove(prop_name.as_str());
 				}
 			}

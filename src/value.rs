@@ -1,4 +1,4 @@
-use crate::{Validation, Validatable, Error, State};
+use crate::{Error, State, Validatable, Validation};
 
 /// Schema equivalent of [`KdlValue`](kdl::KdlValue).
 /// Provides validation for a handful of primitives.
@@ -42,7 +42,7 @@ impl<TStruct> Validatable<kdl::KdlValue, TStruct> for Value {
 	fn validate(
 		&self,
 		value: &kdl::KdlValue,
-		node: &kdl::KdlNode,
+		parent: Option<&kdl::KdlNode>,
 		data: &mut State<TStruct>,
 	) -> Result<(), Error> {
 		use kdl::KdlValue as Kdl;
@@ -64,7 +64,7 @@ impl<TStruct> Validatable<kdl::KdlValue, TStruct> for Value {
 			(expected, value) => Err(Error::ValueDoesNotMatch(
 				expected.clone(),
 				value.clone(),
-				node.clone(),
+				parent.cloned(),
 			)),
 		}
 	}

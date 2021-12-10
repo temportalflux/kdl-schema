@@ -1,12 +1,21 @@
-use crate::{Node, State, Error, Validatable};
+use crate::{Error, Items, Node, State};
 
 /// Parent/root structure for handling the validation of [`kdl`](kdl) file content,
 /// (beyond just grammar correctness).
 pub struct Schema<TStruct> {
 	/// A list of schemas for all the nodes that can appear in the root layer of the document.
-	pub nodes: Vec<Node<TStruct>>,
+	pub nodes: Items<Node<TStruct>>,
 	/// Optional: Callback provided which is executed when the `parse_and_validate` completes successfully.
 	pub on_validation_successful: Option<fn(&mut TStruct)>,
+}
+
+impl<TStruct> Default for Schema<TStruct> {
+	fn default() -> Self {
+		Self {
+			nodes: Items::Select(vec![]),
+			on_validation_successful: None,
+		}
+	}
 }
 
 impl<TStruct> Schema<TStruct> {
@@ -17,16 +26,12 @@ impl<TStruct> Schema<TStruct> {
 		TStruct: Default,
 	{
 		let nodes = kdl::parse_document(&content)?;
+		let mut data = State::<TStruct>::default();
 
 		// Validate each node in the root-layer, validating all child nodes
 		// in the process. This is a depth-first operation where each
 		// node visited is validated and then its children are validated.
-		let mut data = State::<TStruct>::default();
-		for node in nodes.into_iter() {
-			let schema_node = Self::find_node_schema(&node, &self.nodes)
-				.ok_or(Error::NodeHasNoSchema(node.clone()))?;
-			schema_node.validate(&node, &node, &mut data)?;
-		}
+		self.nodes.validate(None, &nodes, &mut data)?;
 
 		// Validate any dynamicly named/aliased values
 		for (_id, collection) in data.collections.iter() {
@@ -38,17 +43,5 @@ impl<TStruct> Schema<TStruct> {
 		}
 
 		Ok(data.output)
-	}
-
-	fn find_node_schema<'a>(
-		node: &kdl::KdlNode,
-		options: &'a Vec<Node<TStruct>>,
-	) -> Option<&'a Node<TStruct>> {
-		for option in options.iter() {
-			if option.name.supports(&node.name) {
-				return Some(option);
-			}
-		}
-		None
 	}
 }

@@ -1,4 +1,4 @@
-use crate::{State, Error};
+use crate::{Error, State};
 
 /// Some basic validations for [`values`](crate::Value).
 #[derive(Debug, Clone)]

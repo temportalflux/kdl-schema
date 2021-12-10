@@ -1,4 +1,4 @@
-use crate::{State, Error};
+use crate::{Error, State};
 
 /// Trait for schema types which can be validated.
 pub(crate) trait Validatable<TKdlValue, TStruct> {
@@ -7,7 +7,7 @@ pub(crate) trait Validatable<TKdlValue, TStruct> {
 	fn validate(
 		&self,
 		value: &TKdlValue,
-		node: &kdl::KdlNode,
+		parent: Option<&kdl::KdlNode>,
 		data: &mut State<TStruct>,
 	) -> Result<(), Error>;
 }

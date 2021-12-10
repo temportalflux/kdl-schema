@@ -1,4 +1,4 @@
-use crate::{Error, Validatable, State};
+use crate::{Error, State, Validatable};
 
 /// A list of items ([`values`](crate::Value) or [`nodes`](crate::Node)).
 #[derive(Clone)]
@@ -41,7 +41,7 @@ where
 impl<TItemType> Items<TItemType> {
 	pub(crate) fn validate<TStruct, TKdlValue>(
 		&self,
-		node: &kdl::KdlNode,
+		parent: Option<&kdl::KdlNode>,
 		items: &Vec<TKdlValue>,
 		data: &mut State<TStruct>,
 	) -> Result<(), Error>
@@ -54,17 +54,17 @@ impl<TItemType> Items<TItemType> {
 				for i in 0..expected.len() {
 					if i >= items.len() {
 						return Err(Error::MissingItem(
-							node.clone(),
+							parent.cloned(),
 							i,
 							expected[i].as_string(),
 							expected.len(),
 						));
 					}
-					expected[i].validate(&items[i], &node, data)?;
+					expected[i].validate(&items[i], parent, data)?;
 				}
 				if items.len() > expected.len() {
 					return Err(Error::TooManyItems(
-						node.clone(),
+						parent.cloned(),
 						expected.len(),
 						TItemType::name(),
 					));
@@ -75,7 +75,7 @@ impl<TItemType> Items<TItemType> {
 					let mut found_option = false;
 					let mut option_errors = vec![];
 					for option in options.iter() {
-						match option.validate(&value, &node, data) {
+						match option.validate(&value, parent, data) {
 							Ok(()) => {
 								found_option = true;
 								break;
@@ -86,7 +86,7 @@ impl<TItemType> Items<TItemType> {
 					if !found_option {
 						return Err(Error::ItemNotInOptions(
 							format!("{}", value),
-							node.clone(),
+							parent.cloned(),
 							format!(
 								"[{}]",
 								options.iter().map(|v| format!("{}", v)).collect::<String>()

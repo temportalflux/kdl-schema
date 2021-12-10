@@ -14,7 +14,7 @@ impl<TStruct> State<TStruct> {
 			self.collections.insert(collection_id, collection);
 		}
 	}
-	
+
 	pub fn insert_collection_name(&mut self, collection_id: &'static str, name: String) {
 		self.ensure_collection_exists(collection_id);
 		self.collections
