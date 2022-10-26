@@ -42,7 +42,7 @@ impl<TItemType> Items<TItemType> {
 	pub(crate) fn validate<TStruct, TKdlValue>(
 		&self,
 		parent: Option<&kdl::KdlNode>,
-		items: &Vec<TKdlValue>,
+		items: &[TKdlValue],
 		data: &mut State<TStruct>,
 	) -> Result<(), Error>
 	where

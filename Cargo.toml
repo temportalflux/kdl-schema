@@ -10,5 +10,5 @@ categories = []
 edition = "2018"
 
 [dependencies]
-kdl = "3.0"
+kdl = "4.6"
 log = { version = "0.4", features = ["std"] }

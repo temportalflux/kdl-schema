@@ -50,16 +50,30 @@ impl<TStruct> Validatable<kdl::KdlNode, TStruct> for Node<TStruct> {
 	) -> Result<(), Error> {
 		// Save the names of nodes into the collective memory (so they can be used in validation once all nodes have been visited).
 		if let Name::Variable(collection_id) = self.name {
-			data.insert_collection_name(&collection_id, node.name.clone());
+			data.insert_collection_name(&collection_id, node.name().value().to_owned());
 		}
 
-		if !self.name.supports(&node.name) {
-			return Err(Error::NameInvalid(node.name.clone(), self.name.clone()));
+		if !self.name.supports(&node.name().value()) {
+			return Err(Error::NameInvalid(
+				node.name().value().to_owned(),
+				self.name.clone(),
+			));
 		}
 
-		self.values.validate(Some(&node), &node.values, data)?;
+		let values = node
+			.entries()
+			.iter()
+			.filter(|entry| entry.name().is_none())
+			.map(|entry| entry.value().clone())
+			.collect::<Vec<_>>();
+		self.values.validate(Some(&node), &values[..], data)?;
 		self.validate_properties(&node, data)?;
-		self.children.validate(Some(&node), &node.children, data)?;
+		if let Some(doc) = node.children() {
+			self.children.validate(Some(&node), &doc.nodes(), data)?;
+		} else {
+			let children = Vec::new();
+			self.children.validate(Some(&node), &children[..], data)?;
+		}
 		if let Some(callback) = &self.on_validation_successful {
 			callback(&mut data.output, &node);
 		}
@@ -85,18 +99,22 @@ impl<TStruct> Node<TStruct> {
 			.iter()
 			.map(|property| (property.name, property.clone()))
 			.collect::<std::collections::HashMap<&'static str, Property>>();
-		for (prop_name, value) in node.properties.iter() {
-			match expected_properties.get(prop_name.as_str()) {
+		for entry in node.entries().iter() {
+			let (prop_name, value) = match entry.name() {
+				Some(name) => (name.value(), entry.value()),
+				None => continue,
+			};
+			match expected_properties.get(prop_name) {
 				None => {
 					return Err(Error::PropertyNotInSchema(
-						prop_name.clone(),
+						prop_name.to_owned(),
 						valid_names.clone(),
 						node.clone(),
 					));
 				}
 				Some(property) => {
 					property.value.validate(value, Some(&node), data)?;
-					found_names.remove(prop_name.as_str());
+					found_names.remove(prop_name);
 				}
 			}
 		}

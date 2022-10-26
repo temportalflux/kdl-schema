@@ -4,8 +4,11 @@ use crate::{Error, State, Validatable, Validation};
 /// Provides validation for a handful of primitives.
 #[derive(Debug, Clone)]
 pub enum Value {
-	Int(Option<Validation<i64>>),
-	Float(Option<Validation<f64>>),
+	IntBase2(Option<Validation<i64>>),
+	IntBase8(Option<Validation<i64>>),
+	IntBase10(Option<Validation<i64>>),
+	IntBase16(Option<Validation<i64>>),
+	FloatBase10(Option<Validation<f64>>),
 	String(Option<Validation<String>>),
 	Boolean,
 	Null,
@@ -15,8 +18,11 @@ impl Value {
 	/// Returns the stringified simple identifier of the value-schema.
 	pub(crate) fn name(&self) -> &'static str {
 		match self {
-			Self::Int(_) => "Int",
-			Self::Float(_) => "Float",
+			Self::IntBase2(_) => "Binary",
+			Self::IntBase8(_) => "Oct",
+			Self::IntBase10(_) => "Integer",
+			Self::IntBase16(_) => "Hexadecimal",
+			Self::FloatBase10(_) => "Float",
 			Self::String(_) => "String",
 			Self::Boolean => "Boolean",
 			Self::Null => "Null",
@@ -47,11 +53,23 @@ impl<TStruct> Validatable<kdl::KdlValue, TStruct> for Value {
 	) -> Result<(), Error> {
 		use kdl::KdlValue as Kdl;
 		match (self, value) {
-			(Self::Int(validation), Kdl::Int(prim)) => match validation {
+			(Self::IntBase2(validation), Kdl::Base2(prim)) => match validation {
 				None => Ok(()),
 				Some(validation) => validation.validate(prim, value, data),
 			},
-			(Self::Float(validation), Kdl::Float(prim)) => match validation {
+			(Self::IntBase8(validation), Kdl::Base8(prim)) => match validation {
+				None => Ok(()),
+				Some(validation) => validation.validate(prim, value, data),
+			},
+			(Self::IntBase10(validation), Kdl::Base10(prim)) => match validation {
+				None => Ok(()),
+				Some(validation) => validation.validate(prim, value, data),
+			},
+			(Self::IntBase16(validation), Kdl::Base16(prim)) => match validation {
+				None => Ok(()),
+				Some(validation) => validation.validate(prim, value, data),
+			},
+			(Self::FloatBase10(validation), Kdl::Base10Float(prim)) => match validation {
 				None => Ok(()),
 				Some(validation) => validation.validate(prim, value, data),
 			},
@@ -59,7 +77,7 @@ impl<TStruct> Validatable<kdl::KdlValue, TStruct> for Value {
 				None => Ok(()),
 				Some(validation) => validation.validate(prim, value, data),
 			},
-			(Self::Boolean, Kdl::Boolean(_value)) => Ok(()),
+			(Self::Boolean, Kdl::Bool(_value)) => Ok(()),
 			(Self::Null, Kdl::Null) => Ok(()),
 			(expected, value) => Err(Error::ValueDoesNotMatch(
 				expected.clone(),

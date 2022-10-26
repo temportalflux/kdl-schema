@@ -32,7 +32,7 @@ impl Error {
 			_ => return "None",
 		}
 		.as_ref()
-		.map(|node| node.name.as_str())
+		.map(|node| node.name().value())
 		.unwrap_or("")
 	}
 
@@ -76,7 +76,7 @@ impl std::fmt::Display for Error {
 				write!(
 				f, "Too many {} in node({}), Found {} {}, but only expected {}. Full node: {}",
 				kind, self.parent_node_name(),
-				kdl_node.as_ref().map(|node| node.values.len()).unwrap_or(0),
+				kdl_node.as_ref().map(|node| node.entries().len()).unwrap_or(0),
 				kind, expected_count, self.parent_node_display()
 			),
 			Self::ItemNotInOptions(value, _, options_string, option_errors) => write!(

@@ -25,13 +25,13 @@ impl<TStruct> Schema<TStruct> {
 	where
 		TStruct: Default,
 	{
-		let nodes = kdl::parse_document(&content)?;
+		let doc = content.parse::<kdl::KdlDocument>()?;
 		let mut data = State::<TStruct>::default();
 
 		// Validate each node in the root-layer, validating all child nodes
 		// in the process. This is a depth-first operation where each
 		// node visited is validated and then its children are validated.
-		self.nodes.validate(None, &nodes, &mut data)?;
+		self.nodes.validate(None, &doc.nodes(), &mut data)?;
 
 		// Validate any dynamicly named/aliased values
 		for (_id, collection) in data.collections.iter() {
